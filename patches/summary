@@ -1,5 +1,5 @@
-#/bin/bash
-# This only reduces by just 775 of a total of 179431.
+#!/bin/bash
+# This only reduces by just 775 of a total of 179431. (Not anymore true???)
 # NOCAS makes Unclassified and 0 genes to NOCAS
 # Then: spacer size below or 70, repeat size 24 or higher and 50 or below
 # For arrays with size 2 an additional contraint is that they must have a
@@ -7,6 +7,7 @@
 shopt -s expand_aliases
 alias mtawk="mawk -F '\t' -v OFS='\t'"
 mtawk -f ../patches/NOCAS.awk genome.types.tsv gene.matched.tsv.more |
-    mtawk '$8<=70 && $15>=24 && $15<=50 && ($13>2 || $16!="NA")' | # > hits.tsv.final
-    python3 ../patches/remove_double_genomes.py > hits.tsv.header
-
+    mtawk '$8<=70 && $15>=24 && $15<=50 && ($13>2 || $16!="NA")' | # > hits.tsv.awk
+    python3 ../patches/remove_double_genomes.py | # > hits.tsv.final
+    python3 ../patches/filter_out_arrays_patch.py -f spacers.info.tsv \
+    > hits.tsv.header

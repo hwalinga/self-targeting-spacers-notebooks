@@ -5,14 +5,16 @@ Remove all genomes that have the same hit patterns
 Also add information about spacer position.
 """
 
-
 import sys
 from itertools import islice
+from operator import itemgetter
 
 import pandas as pd
 
+inp = sys.argv[1] if len(sys.argv) > 1 else sys.stdin
+
 df = pd.read_csv(
-    sys.stdin,
+    inp,
     sep="\t",
     names=[
         "genome_key",
@@ -47,12 +49,20 @@ df = pd.read_csv(
 ).set_index("genome_id")
 
 double_genome = df.groupby("spacer_id").apply(
-    lambda x: "-".join((islice(set(x.index), 1, None)))
+    lambda x: "-".join((islice(set(x.index), 0, None)))
 )
-remove_genome_id = set(double_genome[double_genome != ""].unique())
-df = df[~df.index.isin(remove_genome_id)]
+double_array_ids = double_genome[double_genome.str.contains("-")].unique()
+remove_these_genomes = set()
+for i in double_array_ids:
+    genomes = sorted(i.split("-"))
+    genome_hits = [len(df.loc[genome_id]) for genome_id in genomes]
+    max_index, _ = max(enumerate(genomes), key=itemgetter(1))
+    del genomes[max_index]
+    remove_these_genomes.update(genomes)
+df = df[~df.index.isin(remove_these_genomes)]
 
-# By the definition of the spacer ID, the last number indicates the position in the array
+# By the definition of the spacer ID,
+# the last number indicates the position in the array
 # The orientation of the array is defined by CRISPRDetect
 
 df = df.assign(spacer_pos=lambda x: x["spacer_id"].str.split("_").str[-1].astype(int))
