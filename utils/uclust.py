@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import shutil
 import subprocess
 import tempfile
 from functools import partial
@@ -14,12 +15,17 @@ def create_fasta(sequences):
         yield "%s\n" % seq
 
 
-execute = partial(
-    subprocess.run,
-    shell=True,
-    stdout=subprocess.DEVNULL,
-    stderr=subprocess.DEVNULL,
-)
+def execute(cmd: str):
+    exe = partial(
+        subprocess.run,
+        shell=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    command = cmd.split()[0]
+    if not shutil.which(command):
+        raise OSError(f"{command} not found")
+    return exe(cmd)
 
 
 def uclust(sequences, match_id=0.9):  # list of sequences
